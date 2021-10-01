@@ -21,24 +21,24 @@
 
 # Backend
 
-- If the user clicks on "Create new wallet" -> Redirect to Elrond to create a wallet and then redirect back to our site with QueryParam=?NewAccount 
-- and create a new account. Ask for name, email and a ?password?. 
+/// If the user clicks on "Create new wallet" -> Redirect to Elrond to create a wallet and then redirect back to our site with QueryParam=?NewAccount 
+/// and create a new account. Ask for name, email and a ?password?. 
 
-- NFT's must have categories -> saved in elk or any backend. Preferably elk for speed.
+/// NFT's must have categories -> saved in elk or any backend. Preferably elk for speed.
 
-- Users must be able to reffer other users.
+/// Users must be able to reffer other users.
 
 
 # Frontend
 
-- User must be able to Sign in with their wallet.
-    - if user already exists in our db, show their profile
-    - else ask them to create a new account
+/// User must be able to Sign in with their wallet.
+    /// if user already exists in our db, show their profile
+    /// else ask them to create a new account
 
-- User must be able to Create a new profile ( and a new wallet )
+/// User must be able to Create a new profile ( and a new wallet )
 
-- User must be able to view his/hers NFTs
+/// User must be able to view his/hers NFTs
 
-- User can post an NFT to sale.
+/// User can post an NFT to sale.
 
 
