@@ -1,0 +1,19 @@
+{
+    "emitted_tx": {
+        "tx": {
+            "nonce": 202,
+            "value": "0",
+            "receiver": "erd1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq6gq4hu",
+            "sender": "erd17e4uuvhhnncye6mxxzffmgfhtyz8tpf4ug25he23z99j6yg8lwfqus4n28",
+            "gasPrice": 1000000000,
+            "gasLimit": 60000000,
+            "data": "MDA2MTczNmQwMTAwMDAwMDA1MDMwMTAwMTAwNjE5MDM3ZjAxNDE4MDgwYzAwMDBiN2YwMDQxODA4MGMwMDAwYjdmMDA0MTgwODBjMDAwMGIwNzI1MDMwNjZkNjU2ZDZmNzI3OTAyMDAwYTVmNWY2NDYxNzQ2MTVmNjU2ZTY0MDMwMTBiNWY1ZjY4NjU2MTcwNWY2MjYxNzM2NTAzMDJAMDUwMEAwMTAw",
+            "chainID": "D",
+            "version": 1,
+            "signature": "c5d330673aac7b15fbabf5148c7359543695e6b5dc6e4bd747534ea5f92a46eb1c537a8baaf6421af7c74ec836416fcb61ca5d3de83d4c8c6bc68ffd70dffc01"
+        },
+        "hash": "42241b8bef7287216278450bd0df2cbb263d44cf0c10c53e24840261478fafc9",
+        "data": "0061736d0100000005030100100619037f01418080c0000b7f00418080c0000b7f00418080c0000b072503066d656d6f727902000a5f5f646174615f656e6403010b5f5f686561705f626173650302@0500@0100",
+        "address": "erd1qqqqqqqqqqqqqpgqds72fcdm7mmvk6uxg6xmx2qvjaz3m3l6lwfqfjt2e0"
+    }
+}

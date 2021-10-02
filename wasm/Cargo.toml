@@ -1,8 +1,8 @@
 [package]
-name = "isengard-marketplace-wasm"
+name = "isengard-wasm"
 version = "0.0.1"
-authors = [ "Bruda Claudiu-Marcel <claudiu725@yahoo.com>",]
-edition = "2018"
+authors = [ "Merdescu Razvan <merdescu.razvan@gmail.com>",]
+edition = "2021"
 publish = false
 
 [lib]
@@ -17,7 +17,10 @@ lto = true
 debug = false
 panic = "abort"
 
+[dependencies.isengard]
+features = [ "wasm-output-mode",]
+path = ".."
+
 [dependencies.elrond-wasm-output]
-version = "0.19.1"
-path = "../../../../elrond-wasm-output"
+version = "0.18.2"
 features = [ "wasm-output-mode",]

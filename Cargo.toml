@@ -1,27 +1,23 @@
 [package]
-name = "isengard-marketplace"
+name = "isengard"
 version = "0.0.1"
 authors = [ "merdescu-razvan <merdescu.razvan@gmail.com>",]
 edition = "2021"
 publish = false
 
 [lib]
-path = "src/lib.rs"
+path = "src/isengard.rs"
 
 [features]
-wasm-output-mode = [ "elrond-wasm-node",]
+wasm-output-mode = ["elrond-wasm-node"]
 
 [dependencies.elrond-wasm]
-version = "0.19.1"
-path = "../../../../elrond-wasm"
+version = "0.18.2"
 features = ["derive"]
 
 [dependencies.elrond-wasm-node]
-version = "0.19.1"
-path = "../../../../elrond-wasm-node"
+version = "0.18.2"
 optional = true
 
 [dev-dependencies.elrond-wasm-debug]
-version = "0.19.1"
-path = "../../../../elrond-wasm-debug"
-
+version = "0.18.2"

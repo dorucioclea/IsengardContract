@@ -1,0 +1,45 @@
+{
+  "name": "crowdfunding deployment test",
+  "steps": [
+    {
+      "step": "setState",
+      "accounts": {
+        "address:asd": {
+          "nonce": "0",
+          "balance": "1,000,000"
+        }
+      },
+      "newAddresses": [
+        {
+          "creatorAddress": "address:asd",
+          "creatorNonce": "0",
+          "newAddress": "address:the_crowdfunding_contract"
+        }
+      ]
+    },
+    {
+      "step": "scDeploy",
+      "tx": {
+        "from": "address:asd",
+        "contractCode": "file:../output/isengard-marketplace.wasm",
+        "value": "0",
+        "gasLimit": "1,000,000",
+        "gasPrice": "0"
+      },
+      "expect": {
+        "status": "0",
+        "gas": "*",
+        "refund": "*"
+      }
+    },
+    {
+      "step": "checkState",
+      "accounts": {
+        "address:the_crowdfunding_contract": {
+          "nonce": "1",
+          "balance": "1,000,000"
+        }
+      }
+    }
+  ]
+}
