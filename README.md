@@ -1,6 +1,6 @@
 
 # Functionality:
-- User must be able to send an NFT to the contract for auction -> contract must know that this is auction and not auction and must save owner.
+- User must be able to send an NFT to the contract for auction -> contract must know that this is auction and not sale and must save owner.
 - User must be able to send an NFT to the contract for sale -> contract must know that this is sale and not auction and must save owner.
 - User must be able to bid on the NFT if found on the auction list
 - User must be able to buy the NFT if found on the sale list
@@ -44,24 +44,25 @@
 `erdpy contract build`
 `erdpy contract deploy`
 `export CONTRACT_ADDRESS=$(python3 -c "import json; data = json.load(open('deploy-testnet.interaction.json')); print(data['emitted_tx']['address'])")`
-`erdpy --verbose contract call $CONTRACT_ADDRESS --pem="../wallet/wallet.pem" --gas-limit=9000000 --function="test" --proxy="https://devnet-gateway.elrond.com" --recall-nonce --send`
+`erdpy --verbose contract call $CONTRACT_ADDRESS --pem="../wallet/wallet.pem" --gas-limit=9000000 --function="test" --proxy="https://testnet-gateway.elrond.com" --recall-nonce --send`
 
-`erdpy contract query $CONTRACT_ADDRESS --function="get" --proxy="https://devnet-gateway.elrond.com"`
+`erdpy contract query $CONTRACT_ADDRESS --function="get" --proxy="https://testnet-gateway.elrond.com"`
 
 
 ## Interact with transactions (also using some variables from above)
 Docs at: https://docs.elrond.com/sdk-and-tools/erdpy/sending-bulk-transactions/
 
 The following transaction will fund the contract with 0.01 EGLD.
-`MYWALLET="erd17e4uuvhhnncye6mxxzffmgfhtyz8tpf4ug25he23z99j6yg8lwfqus4n28"`
+`MYWALLET="erd1q0pqc9g2uv98r9uc9c5l8zt2rtvaz72rpp72eauhw39tlzdfngtsjp4xln"`
 `PEM_FILE="../wallet/wallet.pem"`
-`PROXY="https://devnet-gateway.elrond.com"`
+`PROXY="https://testnet-gateway.elrond.com"`
 `NONCE=$(erdpy account get --nonce --address=$MYWALLET --proxy=$PROXY)`
-`DENOMINATION="000000000000000000"`
-`erdpy --verbose tx new --send --outfile="bon-mission-tx-$NONCE.json" --pem=$PEM_FILE --nonce=$NONCE --receiver=$CONTRACT_ADDRESS --value="10000000000000000$DENOMINATION" --gas-limit=9000000 --proxy=$PROXY --data="fund"`
+`DENOMINATION="0000000000000000"`
+`GAS_LIMIT=5000000`
+`erdpy --verbose tx new --send --outfile="output/bon-mission-tx-$NONCE.json" --pem=$PEM_FILE --nonce=$NONCE --receiver=$CONTRACT_ADDRESS --value="1$DENOMINATION" --gas-limit=$GAS_LIMIT --proxy=$PROXY --data="fund"`
 
 In order to retrieve all the funds you sent to the contract use the following code:
-`erdpy --verbose tx new --send --outfile="bon-mission-tx-$NONCE.json" --pem=$PEM_FILE --nonce=$NONCE --receiver=$CONTRACT_ADDRESS --value="0$DENOMINATION" --gas-limit=50000000 --proxy=$PROXY --data="retrieve"`
+`erdpy --verbose tx new --send --outfile="output/bon-mission-tx-$NONCE.json" --pem=$PEM_FILE --nonce=$NONCE --receiver=$CONTRACT_ADDRESS --value="0" --gas-limit=$GAS_LIMIT --proxy=$PROXY --data="retrieve"`
 Note: Don't forget to update the NONCE variable after each transaction.
 
 

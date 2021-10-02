@@ -2,25 +2,25 @@
 
 elrond_wasm::imports!();
 
+pub mod auction;
+pub mod sale;
+
+use auction::*; // use all in auction?
+use sale::*; // use all in sale?
+
 #[elrond_wasm::contract]
 pub trait Isengard {
 
     #[init]
     fn init(
-        &self,
-        #[var_args] opt_token_id: OptionalArg<TokenIdentifier>,
+        &self
     ) -> SCResult<()> {
-        let token_id = opt_token_id
-            .into_option()
-            .unwrap_or_else(TokenIdentifier::egld);
-        require!(
-            token_id.is_egld() || token_id.is_valid_esdt_identifier(),
-            "Invalid token provided"
-        );
+        let owner_address: ManagedAddress = self.blockchain().get_caller();
+        self.set_owner(&owner_address);
 
-        let my_address: Address = self.blockchain().get_caller();
-        self.set_owner(&my_address);
+        // Set prices for auctions, sales, etc.
 
+    
         Ok(())
     }
 
@@ -38,6 +38,13 @@ pub trait Isengard {
         self.add_transaction();    
         Ok(())
     }
+    
+    // Owner endpoint to modify fixed prices
+    #[only_owner]
+    #[endpoint]
+    fn update_prices(&self) -> SCResult<()>{   
+        Ok(())
+    }
 
     // endpoints
     #[payable("EGLD")]
@@ -45,7 +52,7 @@ pub trait Isengard {
     fn fund(
         &self,
         #[payment_token] payment_token: TokenIdentifier,
-        #[payment_amount] payment_amount: Self::BigUint,
+        #[payment_amount] payment_amount: BigUint,
     ) -> SCResult<()> {
         require!(
             payment_token == self.accepted_payment_token_id().get(),
@@ -55,16 +62,35 @@ pub trait Isengard {
         let caller = self.blockchain().get_caller(); // get the user that sent this request
         self.deposit(&caller)
             .update(|deposit| *deposit += payment_amount);
-
+        
         self.add_transaction(); 
         Ok(())
     }
 
+    // This function must be able to receive an NFT and a sum of EGLD.
+    // The NFTs sender will be saved in storage as the NFT owner so he can retrieve it at any time.
+    // The sum of EGLD is a tax we perceive so we can handle gas fees if the user adds and retrieves the NFT from the contract.
     #[payable("*")]
     #[endpoint]
     fn fund_nft(
         &self,
         #[payment_token] _payment_token: TokenIdentifier,
+    ) -> SCResult<()> {
+        let token_type = self.call_value().esdt_token_type();
+        require!(
+            token_type == EsdtTokenType::NonFungible,
+            "Invalid payment token"
+        );
+
+        let _caller = self.blockchain().get_caller(); // get the user that sent this request
+        
+        self.add_transaction(); 
+        Ok(())
+    }
+
+    #[endpoint]
+    fn retrieve_nft(
+        &self,
     ) -> SCResult<()> {
         let token_type = self.call_value().esdt_token_type();
         require!(
@@ -128,16 +154,21 @@ pub trait Isengard {
 
     #[view]
     #[storage_get("owner")]
-    fn get_owner(&self) -> Address;
+    fn get_owner(&self) -> ManagedAddress;
     
+    // storage
+
     #[view(getAcceptedPaymentToken)]
     #[storage_mapper("acceptedPaymentTokenId")]
-    fn accepted_payment_token_id(&self) -> SingleValueMapper<Self::Storage, TokenIdentifier>;
+    fn accepted_payment_token_id(&self) -> SingleValueMapper<TokenIdentifier>;
 
     #[view(getDeposit)]
     #[storage_mapper("deposit")]
-    fn deposit(&self, donor: &Address) -> SingleValueMapper<Self::Storage, Self::BigUint>;
+    fn deposit(&self, donor: &ManagedAddress) -> SingleValueMapper<BigUint>;
 
+    // #[storage_mapper("nftDeposit")]
+    // fn nft_deposit(&self, nft_id: u32) -> SingleValueMapper<Self::Storage, Auction<Self::Api>>;
+    
     #[view(getCounter)]
     #[storage_get("counter")]
     fn get_counter(&self) -> i64;
@@ -152,10 +183,24 @@ pub trait Isengard {
     #[storage_set("transactionCount")]
     fn set_transaction_counter(&self, sum: &u64);
     
-    // storage
     #[storage_set("owner")]
-    fn set_owner(&self, address: &Address);
-    
+    fn set_owner(&self, address: &ManagedAddress);   
+
+    #[view(getVersion)]
+    #[storage_mapper("version")]
+    fn version(&self) -> SingleValueMapper<BigUint>;
+
+
+
+    // testing area
+    #[view(getSale)]
+    #[storage_mapper("sale")]
+    fn sale(&self) -> SingleValueMapper<Sale<Self::Api>>;
+
+    // testing area
+    #[view(getAuction)]
+    #[storage_mapper("auction")]
+    fn auction(&self) -> SingleValueMapper<Auction<Self::Api>>;
 }
 
 
