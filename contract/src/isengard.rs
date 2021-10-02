@@ -74,7 +74,8 @@ pub trait Isengard {
     #[endpoint]
     fn fund_nft(
         &self,
-        #[payment_token] _payment_token: TokenIdentifier,
+         token_id: TokenIdentifier,
+         nonce: u64
     ) -> SCResult<()> {
         let token_type = self.call_value().esdt_token_type();
         require!(
@@ -82,8 +83,11 @@ pub trait Isengard {
             "Invalid payment token"
         );
 
-        let _caller = self.blockchain().get_caller(); // get the user that sent this request
+        let caller = self.blockchain().get_caller(); // get the user that sent this request
         
+        let token_data = self.blockchain().get_esdt_token_data(&caller, &token_id, nonce);
+        self.save_nft(token_id, nonce).set(&token_data);
+
         self.add_transaction(); 
         Ok(())
     }
@@ -91,6 +95,8 @@ pub trait Isengard {
     #[endpoint]
     fn retrieve_nft(
         &self,
+        token_id: TokenIdentifier,
+        nonce: u64
     ) -> SCResult<()> {
         let token_type = self.call_value().esdt_token_type();
         require!(
@@ -98,7 +104,9 @@ pub trait Isengard {
             "Invalid payment token"
         );
 
-        let _caller = self.blockchain().get_caller(); // get the user that sent this request
+        let caller = self.blockchain().get_caller(); // get the user that sent this request
+
+        self.send().direct(&caller, &token_id, nonce, &self.wk1().get(), b"retrieve successful");
 
         self.add_transaction(); 
         Ok(())
@@ -190,17 +198,23 @@ pub trait Isengard {
     #[storage_mapper("version")]
     fn version(&self) -> SingleValueMapper<BigUint>;
 
-
+    #[view(getNft)]
+    #[storage_mapper("saveNft")]
+    fn save_nft(&self, nft_id:TokenIdentifier, nonce:u64) -> SingleValueMapper<EsdtTokenData<Self::Api>>;
 
     // testing area
     #[view(getSale)]
     #[storage_mapper("sale")]
-    fn sale(&self) -> SingleValueMapper<Sale<Self::Api>>;
+    fn sale(&self, nft_id: TokenIdentifier) -> SingleValueMapper<Sale<Self::Api>>;
 
     // testing area
     #[view(getAuction)]
     #[storage_mapper("auction")]
-    fn auction(&self) -> SingleValueMapper<Auction<Self::Api>>;
+    fn auction(&self, nft_id: TokenIdentifier) -> SingleValueMapper<Auction<Self::Api>>;
+
+    //workaround
+    #[storage_mapper("wk1")]
+    fn wk1(&self) -> SingleValueMapper<BigUint>;
 }
 
 
