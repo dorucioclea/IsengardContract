@@ -60,30 +60,11 @@ pub trait Isengard {
         Ok(())
     }
 
-    // This function must be able to receive an NFT and a sum of EGLD.
-    // The NFTs sender will be saved in storage as the NFT owner so he can retrieve it at any time.
-    // The sum of EGLD is a tax we perceive so we can handle gas fees if the user adds and retrieves the NFT from the contract.
     #[payable("*")]
     #[endpoint]
     fn fund_nft(
         &self,
         #[payment_token] _payment_token: TokenIdentifier,
-    ) -> SCResult<()> {
-        let token_type = self.call_value().esdt_token_type();
-        require!(
-            token_type == EsdtTokenType::NonFungible,
-            "Invalid payment token"
-        );
-
-        let _caller = self.blockchain().get_caller(); // get the user that sent this request
-
-        self.add_transaction(); 
-        Ok(())
-    }
-
-    #[endpoint]
-    fn retrieve_nft(
-        &self,
     ) -> SCResult<()> {
         let token_type = self.call_value().esdt_token_type();
         require!(

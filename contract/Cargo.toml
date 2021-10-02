@@ -1,7 +1,7 @@
 [package]
 name = "isengard"
 version = "0.0.1"
-authors = [ "merdescu-razvan <merdescu.razvan@gmail.com>",]
+authors = [ "Bruda Claudiu-Marcel <claudiu725@yahoo.com>",]
 edition = "2021"
 publish = false
 
