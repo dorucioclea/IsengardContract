@@ -8,6 +8,8 @@ output
 wallet
 /contract/abi
 /contract/wasm
+/contract/deploy-devnet.interaction.json
+/contract/deploy-testnet.interaction.json
 
 *.rmeta
 *.rlib
