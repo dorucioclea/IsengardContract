@@ -85,8 +85,8 @@ pub trait Isengard {
 
         let caller = self.blockchain().get_caller(); // get the user that sent this request
         
-        let token_data = self.blockchain().get_esdt_token_data(&caller, &token_id, nonce);
-        self.save_nft(token_id, nonce).set(&token_data);
+        let _token_data = self.blockchain().get_esdt_token_data(&caller, &token_id, nonce);
+        self.save_nft(&token_id, nonce).set(&caller);
 
         self.add_transaction(); 
         Ok(())
@@ -99,8 +99,13 @@ pub trait Isengard {
         nonce: u64
     ) -> SCResult<()> {
         let caller = self.blockchain().get_caller(); // get the user that sent this request
-        // check if the caller has the stored nft.
         let amount = BigUint::from(1u64);
+        let nft_owner = self.save_nft(&token_id, nonce).get();
+
+        require!(
+           caller == nft_owner,
+           "You are not the owner of this NFT"
+        );
 
         self.send().direct(&caller, &token_id, nonce, &amount , b"retrieve successful");
 
@@ -196,7 +201,7 @@ pub trait Isengard {
 
     #[view(getNft)]
     #[storage_mapper("saveNft")]
-    fn save_nft(&self, nft_id:TokenIdentifier, nonce:u64) -> SingleValueMapper<EsdtTokenData<Self::Api>>;
+    fn save_nft(&self, nft_id: &TokenIdentifier, nonce:u64) -> SingleValueMapper<ManagedAddress>;
 
     // testing area
     #[view(getSale)]
