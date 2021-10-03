@@ -99,17 +99,97 @@ pub trait Isengard {
         nonce: u64
     ) -> SCResult<()> {
         let caller = self.blockchain().get_caller(); // get the user that sent this request
-        let amount = BigUint::from(1u64);
-        let nft_owner = self.save_nft(&token_id, nonce).get();
+        let amount = BigUint::from(1u64); // Create a BigUint with value of 1.
+        let nft_owner = self.save_nft(&token_id, nonce).get(); // get the value of the NFT owner.
 
+        // Make sure the one who
         require!(
            caller == nft_owner,
            "You are not the owner of this NFT"
         );
 
+         // Make sure the user has also sent the NFT he said he sent.
+        require!(
+            token_id == self.call_value().token() && nonce == self.call_value().esdt_token_nonce(),
+            "Token sent not the actual token received. We will be keeping the token because you tried to do fraud :("
+        );
+
         self.send().direct(&caller, &token_id, nonce, &amount , b"retrieve successful");
 
         self.add_transaction(); 
+        Ok(())
+    }
+
+    #[payable("*")]
+    #[endpoint]
+    fn add_nft_for_sale(
+        &self,
+        #[payment_token] token_id: TokenIdentifier,
+        #[payment_nonce] nonce: u64,
+         price: BigUint,
+    ) -> SCResult<()> {
+        let token_type = self.call_value().esdt_token_type();
+        require!(
+            token_type == EsdtTokenType::NonFungible,
+            "Invalid payment token"
+        );
+
+        // Make sure the user has also sent the NFT he said he sent.
+        // require!(
+        //     token_id == self.call_value().token() && nonce == self.call_value().esdt_token_nonce(),
+        //     "Token sent not the actual token received. We will be keeping the token because you tried to do fraud :("
+        // )
+
+        let nft_owner = self.blockchain().get_caller(); // get the user that sent this request
+        
+        //let _token_data = self.blockchain().get_esdt_token_data(&caller, &token_id, nonce);
+        let sale = Sale::new(
+            &nft_owner,
+            &price
+        );
+
+        self.sale(&token_id, nonce).set(&sale);
+
+        self.add_transaction(); 
+        Ok(())
+    }
+
+    #[payable("EGLD")]
+    #[endpoint]
+    fn buy_nft_from_sale(&self,
+        token_id: TokenIdentifier,
+        nonce: u64,
+        #[payment] payment: BigUint
+    ) -> SCResult<()> {
+        let caller = self.blockchain().get_caller(); // get the user that sent this request
+        let nft_count = BigUint::from(1u64);
+        let sale = self.sale(&token_id, nonce).get();
+
+        require!(
+            caller != self.types().address_zero(),
+            "Can't transfer to default address 0x0!"
+        );
+        require!(
+           caller != self.blockchain().get_sc_address(),
+            "Can't transfer to this contract!"
+        );
+
+        require!(
+            sale.price == payment,
+            "The amount of EGLD doesn't match the price {sale.price} {amount}"
+        );
+ 
+        // Send the NFT to the new owner
+        self.send()
+            .direct(&caller, &token_id, nonce, &nft_count, b"nft sent successfully");
+
+        // Send the EGLD to the old owner.
+        self.send()
+            .direct_egld(&sale.nft_owner, &payment, b"EGLD sent successfully");
+
+        // Clear the sale.
+        // self.sale(&token_id,nonce).clear();
+
         Ok(())
     }
 
@@ -206,12 +286,12 @@ pub trait Isengard {
     // testing area
     #[view(getSale)]
     #[storage_mapper("sale")]
-    fn sale(&self, nft_id: TokenIdentifier) -> SingleValueMapper<Sale<Self::Api>>;
+    fn sale(&self, nft_id: &TokenIdentifier, nonce:u64) -> SingleValueMapper<Sale<Self::Api>>;
 
     // testing area
     #[view(getAuction)]
     #[storage_mapper("auction")]
-    fn auction(&self, nft_id: TokenIdentifier) -> SingleValueMapper<Auction<Self::Api>>;
+    fn auction(&self, nft_id: &TokenIdentifier) -> SingleValueMapper<Auction<Self::Api>>;
 }
 
 

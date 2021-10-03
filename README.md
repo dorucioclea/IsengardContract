@@ -67,6 +67,43 @@ Note: Don't forget to update the NONCE variable after each transaction.
 
 
 ### Sending an NFT to the Contract from the wallet
-`ESDTNFTTransfer@34535449434b2d643438396430@02@01@000000000000000005009b610ec167242a35130ce3b5f6ed79af577015ba9a17@66756e645f6e6674@34535449434b2d643438396430@02`
+`ESDTNFTTransfer@34535449434b2d643438396430@06@01@000000000000000005003ed42802d3f3205dbb3729a3e0ba3e3e16cc33f39a17@66756e645f6e6674@34535449434b2d643438396430@06`
 
 `ESDTNFTTransfer@<token identifier in hexadecimal encoding>@<the nonce after the NFT creation in hexadecimal encoding>@<quantity to transfer in hexadecimal encoding> @<destination address in hexadecimal encoding>@<name of method to call in hexadecimal encoding> @<first argument of the method in hexadecimal encoding> @<second argument of the method in hexadecimal encoding>`
+
+
+### Retrieve an NFT from the contract to the wallet.
+data="retrieve_nft@34535449434b2d643438396430@06"
+
+
+### Add NFT for Sale
+`add_nft_for_sale`
+`ESDTNFTTransfer@34535449434b2d643438396430@07@01@000000000000000005003ed42802d3f3205dbb3729a3e0ba3e3e16cc33f39a17@6164645f6e66745f666f725f73616c65@01`
+
+
+### Buy NFT on sale
+`buy_nft_from_sale`
+`erd1qqqqqqqqqqqqqpgq8m2zsqkn7vs9mweh9x37pw378ctvcvlnngts3w3s5y`
+`buy_nft_from_sale@34535449434b2d643438396430@07`
+29000000
+
+1
+0.1
+0.01
+0.001
+0.0001
+0.00001
+0.000001
+0.0000001
+0.00000001
+0.000000001
+0.0000000001
+0.00000000001
+0.000000000001
+0.0000000000001
+0.00000000000001
+0.000000000000001
+0.0000000000000001
+0.00000000000000001
+0.000000000000000001
+0.0000000000000000001

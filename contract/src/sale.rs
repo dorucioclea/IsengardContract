@@ -7,6 +7,18 @@ use elrond_wasm::{
 
 #[derive(NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
 pub struct Sale<M:ManagedTypeApi> {
-    nft_owner: ManagedAddress<M>,
-    price: BigUint<M>
+    pub nft_owner: ManagedAddress<M>,
+    pub price: BigUint<M>
+}
+
+impl<M: ManagedTypeApi> Sale<M> {
+    pub fn new(
+        nft_owner: &ManagedAddress<M>,
+        price: &BigUint<M>
+    ) -> Self {
+        Sale {
+            nft_owner : nft_owner.clone(),
+            price : price.clone(),
+        }
+    }
 }

@@ -12,3 +12,19 @@ pub struct Auction<M:ManagedTypeApi> {
     pub current_bid: BigUint<M>,
     pub deadline: u64,
 }
+
+impl<M: ManagedTypeApi> Auction<M> {
+    pub fn new(
+        nft_owner: &ManagedAddress<M>,
+        starting_price: &BigUint<M>,
+        current_bid: &BigUint<M>,
+        deadline: u64,
+    ) -> Self {
+        Auction {
+            nft_owner : nft_owner.clone(),
+            starting_price : starting_price.clone(),
+            current_bid : current_bid.clone(),
+            deadline
+        }
+    }
+}
