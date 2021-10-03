@@ -100,9 +100,9 @@ pub trait Isengard {
     ) -> SCResult<()> {
         let caller = self.blockchain().get_caller(); // get the user that sent this request
         // check if the caller has the stored nft.
-        let x = BigUint::zero();
+        let amount = BigUint::from(1u64);
 
-        self.send().direct(&caller, &token_id, nonce, &x , b"retrieve successful");
+        self.send().direct(&caller, &token_id, nonce, &amount , b"retrieve successful");
 
         self.add_transaction(); 
         Ok(())
