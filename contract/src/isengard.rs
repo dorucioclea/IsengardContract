@@ -98,15 +98,11 @@ pub trait Isengard {
         token_id: TokenIdentifier,
         nonce: u64
     ) -> SCResult<()> {
-        let token_type = self.call_value().esdt_token_type();
-        require!(
-            token_type == EsdtTokenType::NonFungible,
-            "Invalid payment token"
-        );
-
         let caller = self.blockchain().get_caller(); // get the user that sent this request
+        // check if the caller has the stored nft.
+        let x = BigUint::zero();
 
-        self.send().direct(&caller, &token_id, nonce, &self.wk1().get(), b"retrieve successful");
+        self.send().direct(&caller, &token_id, nonce, &x , b"retrieve successful");
 
         self.add_transaction(); 
         Ok(())
@@ -211,10 +207,6 @@ pub trait Isengard {
     #[view(getAuction)]
     #[storage_mapper("auction")]
     fn auction(&self, nft_id: TokenIdentifier) -> SingleValueMapper<Auction<Self::Api>>;
-
-    //workaround
-    #[storage_mapper("wk1")]
-    fn wk1(&self) -> SingleValueMapper<BigUint>;
 }
 
 

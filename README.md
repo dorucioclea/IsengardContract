@@ -67,6 +67,6 @@ Note: Don't forget to update the NONCE variable after each transaction.
 
 
 ### Sending an NFT to the Contract from the wallet
-`ESDTNFTTransfer@34535449434b2d666533313938@04@01@0000000000000000050090c561af3472f25db43fe7bc41f73261b45d3c85fb92@66756e645f6e6674`
+`ESDTNFTTransfer@34535449434b2d643438396430@02@01@000000000000000005009b610ec167242a35130ce3b5f6ed79af577015ba9a17@66756e645f6e6674@34535449434b2d643438396430@02`
 
 `ESDTNFTTransfer@<token identifier in hexadecimal encoding>@<the nonce after the NFT creation in hexadecimal encoding>@<quantity to transfer in hexadecimal encoding> @<destination address in hexadecimal encoding>@<name of method to call in hexadecimal encoding> @<first argument of the method in hexadecimal encoding> @<second argument of the method in hexadecimal encoding>`
