@@ -137,6 +137,39 @@ pub trait Isengard {
         Ok(())
     }
 
+    // When the user adds an NFT for sale, add our fixed price to the price set by the user.
+    #[payable("*")]
+    #[endpoint]
+    fn add_nft_for_auction(
+        &self,
+        #[payment_token] token_id: TokenIdentifier,
+        #[payment_nonce] nonce: u64,
+            starting_price: BigUint,
+            final_price: BigUint,
+            deadline : u64
+    ) -> SCResult<()> {
+        let token_type = self.call_value().esdt_token_type();
+        require!(
+            token_type == EsdtTokenType::NonFungible,
+            "Invalid payment token"
+        );
+
+        let nft_owner = self.blockchain().get_caller(); // get the user that sent this request
+        
+        //let _token_data = self.blockchain().get_esdt_token_data(&caller, &token_id, nonce);
+        let auction = Auction::new(
+            &nft_owner,
+            &starting_price,
+            &final_price,
+            deadline
+        );
+
+        self.auction(&token_id, nonce).set(&auction);
+
+        self.add_transaction(); 
+        Ok(())
+    }
+
     #[payable("EGLD")]
     #[endpoint]
     fn buy_nft_from_sale(&self,
@@ -269,7 +302,7 @@ pub trait Isengard {
     // testing area
     #[view(getAuction)]
     #[storage_mapper("auction")]
-    fn auction(&self, nft_id: &TokenIdentifier) -> SingleValueMapper<Auction<Self::Api>>;
+    fn auction(&self, nft_id: &TokenIdentifier,nonce:u64) -> SingleValueMapper<Auction<Self::Api>>;
 }
 
 
