@@ -1,13 +1,13 @@
 
 # Functionality:
+- User must be able to send an NFT to the contract for sale -> contract must know that this is sale and not auction and must save owner.   - DONE
+- User must be able to buy the NFT if found on the sale list   - DONE
+- User must be able to retrieve there NFT (pong) if the NFT is on the sale list and the user is the Owner. - DONE
 - User must be able to send an NFT to the contract for auction -> contract must know that this is auction and not sale and must save owner.
-- User must be able to send an NFT to the contract for sale -> contract must know that this is sale and not auction and must save owner.
 - User must be able to bid on the NFT if found on the auction list
-- User must be able to buy the NFT if found on the sale list
 - User must be able to retrieve their NFT (pong) if the NFT wasn't sold in the auction
-- User must be able to retrieve there NFT (pong) if the NFT is on the sale list and the user is the Owner.
 - User must be able to retrieve their bid ammount if the auction was won by someone else.
-- Users can request a view of the status of the bids?
+- Users can request a view of the status of the bids.
 - Users can request a view of the time left to bid.
 - User must be able to add NFTs to a drop.
 - Users must be able to join a drop for a fixed price.
@@ -86,3 +86,8 @@ Use GAS -> 29000000
 `buy_nft_from_sale`
 `erd1qqqqqqqqqqqqqpgq002q4p9k4jllln9w882wagrk5s22ga30ngts649jv5`
 `buy_nft_from_sale@34535449434b2d643438396430@0d`
+
+
+# Tests to run:
+    1. Make sure that if you add a NFT sale only you can cancel the sale, nobody else should be able to cancel the sale.
+    2. 

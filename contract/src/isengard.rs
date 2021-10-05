@@ -72,54 +72,43 @@ pub trait Isengard {
     // The sum of EGLD is a tax we perceive so we can handle gas fees if the user adds and retrieves the NFT from the contract.
     #[payable("*")]
     #[endpoint]
-    fn fund_nft(
-        &self,
-         token_id: TokenIdentifier,
-         nonce: u64
+    fn donate_nft(
+        &self
     ) -> SCResult<()> {
         let token_type = self.call_value().esdt_token_type();
         require!(
             token_type == EsdtTokenType::NonFungible,
-            "Invalid payment token"
+            "Invalid token donation"
         );
-
-        let caller = self.blockchain().get_caller(); // get the user that sent this request
-        
-        let _token_data = self.blockchain().get_esdt_token_data(&caller, &token_id, nonce);
-        self.save_nft(&token_id, nonce).set(&caller);
 
         self.add_transaction(); 
         Ok(())
     }
 
+    // Maybe add a small fee for cancelling a sale.
     #[endpoint]
-    fn retrieve_nft(
+    fn cancel_sale(
         &self,
         token_id: TokenIdentifier,
         nonce: u64
     ) -> SCResult<()> {
         let caller = self.blockchain().get_caller(); // get the user that sent this request
         let amount = BigUint::from(1u64); // Create a BigUint with value of 1.
-        let nft_owner = self.save_nft(&token_id, nonce).get(); // get the value of the NFT owner.
+        let sale = self.sale(&token_id, nonce).get(); // get the value of the NFT owner.
 
-        // Make sure the one who
+        // Make sure the one who calls this is the one who added the nft.
         require!(
-           caller == nft_owner,
-           "You are not the owner of this NFT"
-        );
-
-         // Make sure the user has also sent the NFT he said he sent.
-        require!(
-            token_id == self.call_value().token() && nonce == self.call_value().esdt_token_nonce(),
-            "Token sent not the actual token received. We will be keeping the token because you tried to do fraud :("
+           caller == sale.nft_owner,
+           "You can't cancel a sale of an NFT you don't own."
         );
 
         self.send().direct(&caller, &token_id, nonce, &amount , b"retrieve successful");
-
+        
         self.add_transaction(); 
         Ok(())
     }
 
+    // When the user adds an NFT for sale, add our fixed price to the price set by the user.
     #[payable("*")]
     #[endpoint]
     fn add_nft_for_sale(
@@ -133,12 +122,6 @@ pub trait Isengard {
             token_type == EsdtTokenType::NonFungible,
             "Invalid payment token"
         );
-
-        // Make sure the user has also sent the NFT he said he sent.
-        // require!(
-        //     token_id == self.call_value().token() && nonce == self.call_value().esdt_token_nonce(),
-        //     "Token sent not the actual token received. We will be keeping the token because you tried to do fraud :("
-        // )
 
         let nft_owner = self.blockchain().get_caller(); // get the user that sent this request
         
@@ -173,7 +156,6 @@ pub trait Isengard {
            caller != self.blockchain().get_sc_address(),
             "Can't transfer to this contract!"
         );
-
         require!(
             sale.price == payment,
             "The amount of EGLD doesn't match the price {sale.price} {amount}"
@@ -278,10 +260,6 @@ pub trait Isengard {
     #[view(getVersion)]
     #[storage_mapper("version")]
     fn version(&self) -> SingleValueMapper<BigUint>;
-
-    #[view(getNft)]
-    #[storage_mapper("saveNft")]
-    fn save_nft(&self, nft_id: &TokenIdentifier, nonce:u64) -> SingleValueMapper<ManagedAddress>;
 
     // testing area
     #[view(getSale)]
