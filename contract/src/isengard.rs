@@ -46,6 +46,12 @@ pub trait Isengard {
         Ok(())
     }
 
+    // views
+    #[view(isUpForAuction)]
+    fn is_up_for_auction(&self, token_id: &TokenIdentifier,nonce: u64) -> bool {
+        !self.auction(&token_id, nonce).is_empty()
+    }
+
     // endpoints
     #[payable("EGLD")]
     #[endpoint]
@@ -172,6 +178,143 @@ pub trait Isengard {
 
     #[payable("EGLD")]
     #[endpoint]
+    fn bid(&self,
+        token_id: TokenIdentifier,
+        nonce: u64,
+        #[payment] bid_amount: BigUint
+    ) -> SCResult<()> {
+        require!(
+            self.is_up_for_auction(&token_id, nonce),
+            "nft is not up for auction!"
+        );
+
+        let caller = self.blockchain().get_caller(); // get the user that sent this request
+        let mut auction = self.auction(&token_id, nonce).get();
+
+        require!(
+            self.blockchain().get_block_timestamp() < auction.deadline,
+            "auction ended already!"
+        );
+
+        require!(
+           caller != self.blockchain().get_sc_address(),
+            "can't transfer to this contract!"
+        );
+        require!(
+            bid_amount >= auction.starting_price,
+            "bid amount must be higher than or equal to starting price!"
+        );
+        require!(
+            bid_amount > auction.current_bid,
+            "the amount of EGLD must be higher than the current bid."
+        );
+        require!(
+            bid_amount <= auction.final_price,
+            "bid amount must be less than or equal to ending price!"
+        );
+ 
+        // Refund losing bid
+        if auction.current_winner != self.types().address_zero() {
+            self.send()
+                .direct_egld(&auction.current_winner, &auction.current_bid, b"bid refund");
+        }
+
+        auction.current_bid = bid_amount;
+        auction.current_winner = caller;
+        self.auction(&token_id, nonce).set(&auction);
+
+        // Clear the sale.
+        // self.sale(&token_id,nonce).clear();
+
+        Ok(())
+    }
+
+    #[endpoint(endAuction)]
+    fn end_auction(&self, 
+        token_id: TokenIdentifier,
+        nonce: u64
+    ) -> SCResult<()> {
+        require!(
+            self.is_up_for_auction(&token_id, nonce),
+            "nft is not up for auction!"
+        );
+
+        let auction = self.auction(&token_id, nonce).get();
+
+        require!(
+            self.blockchain().get_block_timestamp() > auction.deadline
+                || auction.current_bid == auction.final_price,
+            "auction has not ended yet!"
+        );
+
+        if auction.current_winner != self.types().address_zero() {
+            // send nft to the auction winner
+            self.send().direct_egld(&auction.nft_owner, &auction.current_bid, b"EGLD sent successfully");
+            Ok(self.transfer_to(auction.current_winner, token_id, nonce))
+            
+        } else {
+            // return nft to its owner
+            Ok(self.transfer_to(auction.nft_owner, token_id, nonce))
+        }
+    }
+
+    // #[endpoint]
+    // fn transfer(&self, to: ManagedAddress, token_id: TokenIdentifier, nonce: u64) -> SCResult<()> {
+    //     let amount = BigUint::from(1u64); // Create a BigUint with value of 1.
+    //     let caller = self.blockchain().get_caller();
+
+    //     // Check that the NFT is valid?!
+
+
+    //     require!(
+    //         to != self.types().address_zero(),
+    //         "Can't transfer to default address 0x0!"
+    //     );
+    //     require!(
+    //         to != self.blockchain().get_sc_address(),
+    //         "Can't transfer to this contract!"
+    //     );
+    //     require!(
+    //         self.get_nftowner(token_id, nonce) == caller,
+    //         "You are not the owner of that nft!"
+    //     );
+
+    //     Ok(())
+    // }
+
+    // #[callback]
+    // fn transfer_callback(
+    //     &self,
+    //     #[call_result] result: ManagedAsyncCallResult<()>,
+    //     token_id: TokenIdentifier,
+    //     nonce: u64,
+    // ) {
+    //     match result {
+    //         ManagedAsyncCallResult::Ok(()) => {
+    //             let auction = self.auction(&token_id, nonce).get();
+    //             self.auction(&token_id, nonce).clear();
+
+    //             // send winning bid money to kitty owner
+    //             // condition needed for gen zero kitties, since this sc is their owner
+    //             // and for when no bid was made
+    //             if auction.nft_owner != self.blockchain().get_sc_address()
+    //                 && auction.current_winner != self.types().address_zero()
+    //             {
+    //                 self.send().direct_egld(
+    //                     &auction.nft_owner,
+    //                     &auction.current_bid,
+    //                     b"sold nft",
+    //                 );
+    //             }
+    //         },
+    //         ManagedAsyncCallResult::Err(_) => {
+    //             // nothing to revert in case of error
+    //         },
+    //     }
+    // }
+
+    #[payable("EGLD")]
+    #[endpoint]
     fn buy_nft_from_sale(&self,
         token_id: TokenIdentifier,
         nonce: u64,
@@ -250,6 +393,16 @@ pub trait Isengard {
 
     // private
 
+    fn transfer_to(&self, 
+        address: ManagedAddress, 
+        token_id: TokenIdentifier,
+        nonce: u64
+    ){
+        let amount = BigUint::from(1u64); // Create a BigUint with value of 1.
+
+        self.send().direct(&address, &token_id, nonce, &amount , b"retrieve successful");
+    }
+
     fn add_transaction(&self){
         let transaction_counter = self.get_transaction_counter();
         let counter = transaction_counter + 1;
@@ -294,13 +447,9 @@ pub trait Isengard {
     #[storage_mapper("version")]
     fn version(&self) -> SingleValueMapper<BigUint>;
 
-    // testing area
-    #[view(getSale)]
     #[storage_mapper("sale")]
     fn sale(&self, nft_id: &TokenIdentifier, nonce:u64) -> SingleValueMapper<Sale<Self::Api>>;
 
-    // testing area
-    #[view(getAuction)]
     #[storage_mapper("auction")]
     fn auction(&self, nft_id: &TokenIdentifier,nonce:u64) -> SingleValueMapper<Auction<Self::Api>>;
 }

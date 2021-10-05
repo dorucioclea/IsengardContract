@@ -3,9 +3,9 @@
 - User must be able to send an NFT to the contract for sale -> contract must know that this is sale and not auction and must save owner.   - DONE
 - User must be able to buy the NFT if found on the sale list   - DONE
 - User must be able to retrieve there NFT (pong) if the NFT is on the sale list and the user is the Owner. - DONE
-- User must be able to send an NFT to the contract for auction -> contract must know that this is auction and not sale and must save owner.
-- User must be able to bid on the NFT if found on the auction list
-- User must be able to retrieve their NFT (pong) if the NFT wasn't sold in the auction
+- User must be able to send an NFT to the contract for auction -> contract must know that this is auction and not sale and must save owner. - DONE
+- User must be able to bid on the NFT if found on the auction list - DONE (but auction list must exist in backend)
+- User must be able to retrieve their NFT (pong) if the NFT wasn't sold in the auction - DONE ( If there were no bidders, otherwise it's sold. )
 - User must be able to retrieve their bid ammount if the auction was won by someone else.
 - Users can request a view of the status of the bids.
 - Users can request a view of the time left to bid.
@@ -87,7 +87,28 @@ Use GAS -> 29000000
 `erd1qqqqqqqqqqqqqpgq002q4p9k4jllln9w882wagrk5s22ga30ngts649jv5`
 `buy_nft_from_sale@34535449434b2d643438396430@0d`
 
+### Add NFT on Auction
+Use GAS -> 29000000
+`add_nft_for_auction`
+`add_nft_for_auction@collection@nonce@starting@ending@deadline` 
+`ESDTNFTTransfer@34535449434b2d643438396430@0f@01@00000000000000000500f34fc0409bba9d12bc413397d99c5991f2e141139a17@6164645f6e66745f666f725f61756374696f6e@2386F26FC10000@6A94D74F430000@1633456503`
+
+### Bid on Auction
+Use GAS -> 20000000
+`bid`
+`erd1qqqqqqqqqqqqqpgq7d8uqsymh2w390zpxwtan8zej8ewzsgnngts0nvxnp`
+`bid@34535449434b2d643438396430@0f`
+
+### End auction
+`end_auction`
+`erd1qqqqqqqqqqqqqpgq7d8uqsymh2w390zpxwtan8zej8ewzsgnngts0nvxnp`
+`endAuction@34535449434b2d643438396430@0f`
 
 # Tests to run:
     1. Make sure that if you add a NFT sale only you can cancel the sale, nobody else should be able to cancel the sale.
-    2. 
+    2. Auction should fail to end if the deadline is not met or if the highest bid is smaller than the final price.
+    3. The auction must be ended only by the auction owner or the highest bidder( highest bidder on only if final price touched).
+    5. Make sure that if there are not bidders to an auction, when the auction is ended, the owner gets his NFT back.
+
+# Future improvements 
+    1. Add x-time to auctions. (ask panica)
