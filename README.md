@@ -6,12 +6,12 @@
 - User must be able to send an NFT to the contract for auction -> contract must know that this is auction and not sale and must save owner. - DONE
 - User must be able to bid on the NFT if found on the auction list - DONE (but auction list must exist in backend)
 - User must be able to retrieve their NFT (pong) if the NFT wasn't sold in the auction - DONE ( If there were no bidders, otherwise it's sold. )
-- User must be able to retrieve their bid ammount if the auction was won by someone else.
-- Users can request a view of the status of the bids.
-- Users can request a view of the time left to bid.
-- User must be able to add NFTs to a drop.
-- Users must be able to join a drop for a fixed price.
-- User must receive their refferal reward is there is one to be offered. (without claim?)
+- User must be able to retrieve their bid ammount if the auction was won by someone else. - DONE ( the bid amount is sent automatically)
+- Users can request a view of the status of the bids.  - Not done yet.
+- Users can request a view of the time left to bid. - Not done yet.
+- User must be able to add NFTs to a drop. - Not done yet. Must clarify drops.
+- Users must be able to join a drop for a fixed price. - Not done yet. Must clarify drops. 
+- User must receive their refferal reward is there is one to be offered. (without claim?) 
 
 - Users 
 - Fields
@@ -91,24 +91,27 @@ Use GAS -> 29000000
 Use GAS -> 29000000
 `add_nft_for_auction`
 `add_nft_for_auction@collection@nonce@starting@ending@deadline` 
-`ESDTNFTTransfer@34535449434b2d643438396430@0f@01@00000000000000000500f34fc0409bba9d12bc413397d99c5991f2e141139a17@6164645f6e66745f666f725f61756374696f6e@2386F26FC10000@6A94D74F430000@1633456503`
+`ESDTNFTTransfer@34535449434b2d643438396430@0f@01@000000000000000005005a3e2b3486045c78b9dd34421ce92514caf202e69a17@6164645f6e66745f666f725f61756374696f6e@2386F26FC10000@6A94D74F430000@1633456503`
 
 ### Bid on Auction
 Use GAS -> 20000000
 `bid`
-`erd1qqqqqqqqqqqqqpgq7d8uqsymh2w390zpxwtan8zej8ewzsgnngts0nvxnp`
+`erd1qqqqqqqqqqqqqpgqtglzkdyxq3w83wwax3ppe6f9zn90yqhxngtsr2qy9c`
 `bid@34535449434b2d643438396430@0f`
 
 ### End auction
 `end_auction`
-`erd1qqqqqqqqqqqqqpgq7d8uqsymh2w390zpxwtan8zej8ewzsgnngts0nvxnp`
+`erd1qqqqqqqqqqqqqpgqtglzkdyxq3w83wwax3ppe6f9zn90yqhxngtsr2qy9c`
 `endAuction@34535449434b2d643438396430@0f`
 
 # Tests to run:
     1. Make sure that if you add a NFT sale only you can cancel the sale, nobody else should be able to cancel the sale.
     2. Auction should fail to end if the deadline is not met or if the highest bid is smaller than the final price.
     3. The auction must be ended only by the auction owner or the highest bidder( highest bidder on only if final price touched).
-    5. Make sure that if there are not bidders to an auction, when the auction is ended, the owner gets his NFT back.
+    4. Make sure that if there are not bidders to an auction, when the auction is ended, the owner gets his NFT back.
+    5. A user can't bid on his own auction.
+    6. If the bid is equal or higher than the final price, end the auction and do the transfers without requiring an endAuction.
 
 # Future improvements 
     1. Add x-time to auctions. (ask panica)
+    2. Add a refferal system. (refferal parameter on all calls ? )

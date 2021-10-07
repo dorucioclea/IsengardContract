@@ -188,12 +188,18 @@ pub trait Isengard {
             "nft is not up for auction!"
         );
 
-        let caller = self.blockchain().get_caller(); // get the user that sent this request
         let mut auction = self.auction(&token_id, nonce).get();
 
         require!(
             self.blockchain().get_block_timestamp() < auction.deadline,
             "auction ended already!"
+        );
+
+        let caller = self.blockchain().get_caller(); // get the user that sent this request
+        
+        require!(
+            caller != auction.nft_owner ,
+            "you can not bid on your own auction"
         );
 
         require!(
@@ -211,7 +217,7 @@ pub trait Isengard {
         require!(
             bid_amount <= auction.final_price,
             "bid amount must be less than or equal to ending price!"
-        );
+        );  
  
         // Refund losing bid
         if auction.current_winner != self.types().address_zero() {
@@ -219,14 +225,18 @@ pub trait Isengard {
                 .direct_egld(&auction.current_winner, &auction.current_bid, b"bid refund");
         }
 
-        auction.current_bid = bid_amount;
-        auction.current_winner = caller;
-        self.auction(&token_id, nonce).set(&auction);
+        if auction.final_price <= bid_amount {
+            self.send().direct_egld(&auction.nft_owner, &auction.current_bid, b"EGLD sent successfully");
+            self.auction(&token_id, nonce).clear();
 
-        // Clear the sale.
-        // self.sale(&token_id,nonce).clear();
+            Ok(self.transfer_to(auction.current_winner, token_id, nonce))
+        }else{
+            auction.current_bid = bid_amount;
+            auction.current_winner = caller;
+            self.auction(&token_id, nonce).set(&auction);
 
-        Ok(())
+            Ok(())
+        }
     }
 
     #[endpoint(endAuction)]
@@ -257,61 +267,6 @@ pub trait Isengard {
             Ok(self.transfer_to(auction.nft_owner, token_id, nonce))
         }
     }
-
-    // #[endpoint]
-    // fn transfer(&self, to: ManagedAddress, token_id: TokenIdentifier, nonce: u64) -> SCResult<()> {
-    //     let amount = BigUint::from(1u64); // Create a BigUint with value of 1.
-    //     let caller = self.blockchain().get_caller();
-
-    //     // Check that the NFT is valid?!
-
-
-    //     require!(
-    //         to != self.types().address_zero(),
-    //         "Can't transfer to default address 0x0!"
-    //     );
-    //     require!(
-    //         to != self.blockchain().get_sc_address(),
-    //         "Can't transfer to this contract!"
-    //     );
-    //     require!(
-    //         self.get_nftowner(token_id, nonce) == caller,
-    //         "You are not the owner of that nft!"
-    //     );
-
-    //     Ok(())
-    // }
-
-    // #[callback]
-    // fn transfer_callback(
-    //     &self,
-    //     #[call_result] result: ManagedAsyncCallResult<()>,
-    //     token_id: TokenIdentifier,
-    //     nonce: u64,
-    // ) {
-    //     match result {
-    //         ManagedAsyncCallResult::Ok(()) => {
-    //             let auction = self.auction(&token_id, nonce).get();
-    //             self.auction(&token_id, nonce).clear();
-
-    //             // send winning bid money to kitty owner
-    //             // condition needed for gen zero kitties, since this sc is their owner
-    //             // and for when no bid was made
-    //             if auction.nft_owner != self.blockchain().get_sc_address()
-    //                 && auction.current_winner != self.types().address_zero()
-    //             {
-    //                 self.send().direct_egld(
-    //                     &auction.nft_owner,
-    //                     &auction.current_bid,
-    //                     b"sold nft",
-    //                 );
-    //             }
-    //         },
-    //         ManagedAsyncCallResult::Err(_) => {
-    //             // nothing to revert in case of error
-    //         },
-    //     }
-    // }
 
     #[payable("EGLD")]
     #[endpoint]
@@ -345,8 +300,7 @@ pub trait Isengard {
         self.send()
             .direct_egld(&sale.nft_owner, &payment, b"EGLD sent successfully");
 
-        // Clear the sale.
-        // self.sale(&token_id,nonce).clear();
+         self.sale(&token_id,nonce).clear();
 
         Ok(())
     }
