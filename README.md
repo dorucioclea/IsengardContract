@@ -78,8 +78,12 @@ data="retrieve_nft@34535449434b2d643438396430@06"
 
 ### Add NFT for Sale
 `add_nft_for_sale`
-`ESDTNFTTransfer@34535449434b2d643438396430@0d@01@000000000000000005000eb0eeced4ac0be4258d35847986c8c5a734f3739a17@6164645f6e66745f666f725f73616c65@2386F26FC10000`
+`ESDTNFTTransfer@34535449434b2d643438396430@0d@01@00000000000000000500e586aad80fd63372d117bc51f0620ca58bcda97afb92@6164645f6e66745f666f725f73616c65@2386F26FC10000`
 This NFT will be bought with 0.01 EGLD
+
+erd1qqqqqqqqqqqqqpgqukr24kq06ceh95ghh3glqcsv5k9um2t6lwfq3lpn34
+Devnet:
+`ESDTNFTTransfer@34535449434b2d666533313938@01@01@00000000000000000500e586aad80fd63372d117bc51f0620ca58bcda97afb92@6164645f6e66745f666f725f73616c65@2386F26FC10000`
 
 ### Buy NFT on sale
 Use GAS -> 29000000
@@ -87,17 +91,29 @@ Use GAS -> 29000000
 `erd1qqqqqqqqqqqqqpgq002q4p9k4jllln9w882wagrk5s22ga30ngts649jv5`
 `buy_nft_from_sale@34535449434b2d643438396430@0d`
 
+Devnet:
+
 ### Add NFT on Auction
 Use GAS -> 29000000
 `add_nft_for_auction`
 `add_nft_for_auction@collection@nonce@starting@ending@deadline` 
 `ESDTNFTTransfer@34535449434b2d643438396430@0f@01@000000000000000005005a3e2b3486045c78b9dd34421ce92514caf202e69a17@6164645f6e66745f666f725f61756374696f6e@2386F26FC10000@6A94D74F430000@1633456503`
 
+Devnet:
+34535449434b2d6665333139382d3031
+`ESDTNFTTransfer@34535449434b2d666533313938@01@01@000000000000000005004de06c6a783747444ae9d5049878eac8fecdbc27fb92@6164645f6e66745f666f725f61756374696f6e@2386F26FC10000@6A94D74F430000@1634073686`
+
+
 ### Bid on Auction
 Use GAS -> 20000000
 `bid`
 `erd1qqqqqqqqqqqqqpgqtglzkdyxq3w83wwax3ppe6f9zn90yqhxngtsr2qy9c`
 `bid@34535449434b2d643438396430@0f`
+
+Devnet:
+`bid@34535449434b2d666533313938@01`
+
+
 
 ### End auction
 `end_auction`
@@ -112,6 +128,17 @@ Use GAS -> 20000000
     5. A user can't bid on his own auction.
     6. If the bid is equal or higher than the final price, end the auction and do the transfers without requiring an endAuction.
 
+# TODO:
+    1. Add "Make offer" feature. Introduce offers for NFTs that 
+        - User1 (buyer) sends x Egld to contract which locks the money as an offer. -"createOffer" (Maybe also try to double the gas for to offer to the seller)
+        - User2 (seller) can accept the offer by sending a message to the contract - "acceptOffer" (Maybe try to also offer GAS back).
+        - User1 (buyer) can retrieve his money by cancelling the offer - "cancelOffer" 
+        Note :Creating a new offer for the same contract should be available. 
+        If there are 3 offers from 3 buyers for the same NFT, in case one is accepted, send all the other money back.
+        Each offer should have a final timestamp after which the seller can no longer accept the offer and only the buyer can retrieve his money.
+
+    2. Add a "lockedAmount" of money which is added or substracted each time someone creates an offer or something which can be substracted from the 
+        total amount of EGLD the contract has in order to get the actual marketplace profit and not leave the contract without liquidity.
 # Future improvements 
     1. Add x-time to auctions. (ask panica)
     2. Add a refferal system. (refferal parameter on all calls ? )
