@@ -17,7 +17,7 @@ pub trait Isengard {
     ) -> SCResult<()> {
         let owner_address: ManagedAddress = self.blockchain().get_caller();
         self.set_owner(&owner_address);
-
+        self.version().set(&1);
         // Set prices for auctions, sales, etc.
 
     
@@ -48,8 +48,8 @@ pub trait Isengard {
 
     // views
     #[view(isUpForAuction)]
-    fn is_up_for_auction(&self, token_id: &TokenIdentifier,nonce: u64) -> bool {
-        !self.auction(&token_id, nonce).is_empty()
+    fn is_up_for_auction(&self, token_id: &TokenIdentifier,nonce: &u64) -> bool {
+        !self.auction(&token_id, &nonce).is_empty()
     }
 
     // endpoints
@@ -100,7 +100,7 @@ pub trait Isengard {
     ) -> SCResult<()> {
         let caller = self.blockchain().get_caller(); // get the user that sent this request
         let amount = BigUint::from(1u64); // Create a BigUint with value of 1.
-        let sale = self.sale(&token_id, nonce).get(); // get the value of the NFT owner.
+        let sale = self.sale(&token_id, &nonce).get(); // get the value of the NFT owner.
 
         // Make sure the one who calls this is the one who added the nft.
         require!(
@@ -110,12 +110,14 @@ pub trait Isengard {
 
         self.send().direct(&caller, &token_id, nonce, &amount , b"retrieve successful");
         
+        self.nft_states(&token_id, &nonce).clear();
         self.add_transaction(); 
         Ok(())
     }
 
     // When the user adds an NFT for sale, add our fixed price to the price set by the user.
     #[payable("*")]
+    #[allow(clippy::too_many_arguments)]
     #[endpoint]
     fn add_nft_for_sale(
         &self,
@@ -137,7 +139,13 @@ pub trait Isengard {
             &price
         );
 
-        self.sale(&token_id, nonce).set(&sale);
+        let state = NftStates::new(
+            &nft_owner,
+            NftState::Sale
+        );
+
+        self.nft_states(&token_id, &nonce).set(&state);
+        self.sale(&token_id, &nonce).set(&sale);
 
         self.add_transaction(); 
         Ok(())
@@ -170,7 +178,13 @@ pub trait Isengard {
             deadline
         );
 
-        self.auction(&token_id, nonce).set(&auction);
+        let state = NftStates::new(
+            &nft_owner,
+            NftState::Auction
+        );
+
+        self.nft_states(&token_id, &nonce).set(&state);
+        self.auction(&token_id, &nonce).set(&auction);
 
         self.add_transaction(); 
         Ok(())
@@ -184,11 +198,11 @@ pub trait Isengard {
         #[payment] bid_amount: BigUint
     ) -> SCResult<()> {
         require!(
-            self.is_up_for_auction(&token_id, nonce),
+            self.is_up_for_auction(&token_id, &nonce),
             "nft is not up for auction!"
         );
 
-        let mut auction = self.auction(&token_id, nonce).get();
+        let mut auction = self.auction(&token_id, &nonce).get();
 
         require!(
             self.blockchain().get_block_timestamp() < auction.deadline,
@@ -227,13 +241,18 @@ pub trait Isengard {
 
         if auction.final_price <= bid_amount {
             self.send().direct_egld(&auction.nft_owner, &auction.current_bid, b"EGLD sent successfully");
-            self.auction(&token_id, nonce).clear();
+            self.auction(&token_id, &nonce).clear();
+
+            self.add_transaction(); 
+            self.nft_states(&token_id, &nonce).clear();
 
             Ok(self.transfer_to(auction.current_winner, token_id, nonce))
         }else{
             auction.current_bid = bid_amount;
             auction.current_winner = caller;
-            self.auction(&token_id, nonce).set(&auction);
+            self.auction(&token_id, &nonce).set(&auction);
+
+            self.add_transaction(); 
 
             Ok(())
         }
@@ -245,11 +264,11 @@ pub trait Isengard {
         nonce: u64
     ) -> SCResult<()> {
         require!(
-            self.is_up_for_auction(&token_id, nonce),
+            self.is_up_for_auction(&token_id, &nonce),
             "nft is not up for auction!"
         );
 
-        let auction = self.auction(&token_id, nonce).get();
+        let auction = self.auction(&token_id, &nonce).get();
 
         require!(
             self.blockchain().get_block_timestamp() > auction.deadline
@@ -260,10 +279,14 @@ pub trait Isengard {
         if auction.current_winner != self.types().address_zero() {
             // send nft to the auction winner
             self.send().direct_egld(&auction.nft_owner, &auction.current_bid, b"EGLD sent successfully");
+            self.add_transaction(); 
+            self.nft_states(&token_id, &nonce).clear();
             Ok(self.transfer_to(auction.current_winner, token_id, nonce))
             
         } else {
             // return nft to its owner
+            self.add_transaction(); 
+            self.nft_states(&token_id, &nonce).clear();
             Ok(self.transfer_to(auction.nft_owner, token_id, nonce))
         }
     }
@@ -277,7 +300,7 @@ pub trait Isengard {
     ) -> SCResult<()> {
         let caller = self.blockchain().get_caller(); // get the user that sent this request
         let nft_count = BigUint::from(1u64);
-        let sale = self.sale(&token_id, nonce).get();
+        let sale = self.sale(&token_id, &nonce).get();
 
         require!(
             caller != self.types().address_zero(),
@@ -300,8 +323,10 @@ pub trait Isengard {
         self.send()
             .direct_egld(&sale.nft_owner, &payment, b"EGLD sent successfully");
 
-         self.sale(&token_id,nonce).clear();
+         self.sale(&token_id,&nonce).clear();
 
+         self.add_transaction(); 
+         self.nft_states(&token_id, &nonce).clear();
         Ok(())
     }
 
@@ -368,7 +393,6 @@ pub trait Isengard {
     fn get_owner(&self) -> ManagedAddress;
     
     // storage
-
     #[view(getAcceptedPaymentToken)]
     #[storage_mapper("acceptedPaymentTokenId")]
     fn accepted_payment_token_id(&self) -> SingleValueMapper<TokenIdentifier>;
@@ -390,22 +414,33 @@ pub trait Isengard {
     #[view(getTransactionCount)]
     #[storage_get("transactionCount")]
     fn get_transaction_counter(&self) -> u64;
+    //base64 to binary then binary to decimal to see this.
 
     #[storage_set("transactionCount")]
     fn set_transaction_counter(&self, sum: &u64);
+
     
     #[storage_set("owner")]
     fn set_owner(&self, address: &ManagedAddress);   
 
     #[view(getVersion)]
     #[storage_mapper("version")]
-    fn version(&self) -> SingleValueMapper<BigUint>;
+    fn version(&self) -> SingleValueMapper<u64>;
+
+    #[view(getNftState)]
+    #[storage_mapper("nftStates")]
+    fn nft_states(&self, nft_id: &TokenIdentifier, nonce:&u64) -> SingleValueMapper<NftStates<Self::Api>>;
 
     #[storage_mapper("sale")]
-    fn sale(&self, nft_id: &TokenIdentifier, nonce:u64) -> SingleValueMapper<Sale<Self::Api>>;
+    fn sale(&self, nft_id: &TokenIdentifier, nonce:&u64) -> SingleValueMapper<Sale<Self::Api>>;
 
     #[storage_mapper("auction")]
-    fn auction(&self, nft_id: &TokenIdentifier,nonce:u64) -> SingleValueMapper<Auction<Self::Api>>;
+    fn auction(&self, nft_id: &TokenIdentifier,nonce:&u64) -> SingleValueMapper<Auction<Self::Api>>;
+
+    #[view(getSale)]
+    #[storage_get("sale")]
+    fn get_sale(&self, nft_id: &TokenIdentifier, nonce:&u64) -> Sale<Self::Api>;
+    
 }
 
 

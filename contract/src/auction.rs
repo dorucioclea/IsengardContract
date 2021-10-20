@@ -6,6 +6,31 @@ use elrond_wasm::{
 };
 
 #[derive(NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
+pub enum NftState {
+    Default,
+    Sale,
+    Auction,
+}
+
+#[derive(NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
+pub struct NftStates<M:ManagedTypeApi>{
+    pub nft_owner: ManagedAddress<M>,
+    pub state : NftState
+}
+
+impl<M: ManagedTypeApi> NftStates<M> {
+    pub fn new(
+        nft_owner: &ManagedAddress<M>,
+        state : NftState
+    ) -> Self {
+        NftStates {
+            nft_owner : nft_owner.clone(),
+            state : state
+        }
+    }
+}
+
+#[derive(NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
 pub struct Auction<M:ManagedTypeApi> {
     pub nft_owner: ManagedAddress<M>,
     pub starting_price: BigUint<M>,
