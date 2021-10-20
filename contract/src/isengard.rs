@@ -3,10 +3,10 @@
 elrond_wasm::imports!();
 
 pub mod auction;
-pub mod sale;
+//pub mod sale;
 
 use auction::*; // use all in auction?
-use sale::*; // use all in sale?
+//use sale::*; // use all in sale?
 
 #[elrond_wasm::contract]
 pub trait Isengard {
@@ -18,6 +18,7 @@ pub trait Isengard {
         let owner_address: ManagedAddress = self.blockchain().get_caller();
         self.set_owner(&owner_address);
         self.version().set(&1);
+        //self.set_counter(&0);
         // Set prices for auctions, sales, etc.
 
     
@@ -48,8 +49,8 @@ pub trait Isengard {
 
     // views
     #[view(isUpForAuction)]
-    fn is_up_for_auction(&self, token_id: &TokenIdentifier,nonce: &u64) -> bool {
-        !self.auction(&token_id, &nonce).is_empty()
+    fn is_up_for_sale(&self, token_id: &TokenIdentifier,nonce: &u64) -> bool {
+        !self.sale_wrapper(&token_id, &nonce).is_empty()
     }
 
     // endpoints
@@ -139,13 +140,17 @@ pub trait Isengard {
             &price
         );
 
-        let state = NftStates::new(
-            &nft_owner,
-            NftState::Sale
-        );
+        // let state = NftStates::new(
+        //     &nft_owner,
+        //     NftState::Sale
+        // );
 
-        self.nft_states(&token_id, &nonce).set(&state);
-        self.sale(&token_id, &nonce).set(&sale);
+        let wrapper = SaleWrapper::new_sale(sale, NftState::Sale);
+        self.sale_wrapper(&token_id, &nonce).set(&wrapper);
+
+        //self.nft_states(&token_id, &nonce).set(&state);
+        //self.sale(&token_id, &nonce).set(&sale);
+        //self.add();
 
         self.add_transaction(); 
         Ok(())
@@ -175,16 +180,19 @@ pub trait Isengard {
             &nft_owner,
             &starting_price,
             &final_price,
-            deadline
+            deadline,
         );
 
-        let state = NftStates::new(
-            &nft_owner,
-            NftState::Auction
-        );
+        // let state = NftStates::new(
+        //     &nft_owner,
+        //     NftState::Auction
+        // );
 
-        self.nft_states(&token_id, &nonce).set(&state);
-        self.auction(&token_id, &nonce).set(&auction);
+        //self.nft_states(&token_id, &nonce).set(&state);
+        // self.auction(&token_id, &nonce).set(&auction);
+        //self.add();
+        let wrapper = SaleWrapper::new_auction(auction, NftState::Auction);
+        self.sale_wrapper(&token_id, &nonce).set(&wrapper);
 
         self.add_transaction(); 
         Ok(())
@@ -198,11 +206,14 @@ pub trait Isengard {
         #[payment] bid_amount: BigUint
     ) -> SCResult<()> {
         require!(
-            self.is_up_for_auction(&token_id, &nonce),
-            "nft is not up for auction!"
+            self.is_up_for_sale(&token_id, &nonce),
+            "nft is not up for a type of sale!"
         );
 
-        let mut auction = self.auction(&token_id, &nonce).get();
+        let mut wrapper = self.sale_wrapper(&token_id, &nonce).get();
+
+        //TODO MAKE SURE THIS AUCTION EXISTS SO THIS DOESN'T PANIC
+        let mut auction = wrapper.auction.unwrap();
 
         require!(
             self.blockchain().get_block_timestamp() < auction.deadline,
@@ -241,16 +252,18 @@ pub trait Isengard {
 
         if auction.final_price <= bid_amount {
             self.send().direct_egld(&auction.nft_owner, &auction.current_bid, b"EGLD sent successfully");
-            self.auction(&token_id, &nonce).clear();
+            self.sale_wrapper(&token_id, &nonce).clear();
 
             self.add_transaction(); 
-            self.nft_states(&token_id, &nonce).clear();
+            // self.nft_states(&token_id, &nonce).clear();
 
             Ok(self.transfer_to(auction.current_winner, token_id, nonce))
         }else{
             auction.current_bid = bid_amount;
             auction.current_winner = caller;
-            self.auction(&token_id, &nonce).set(&auction);
+
+            wrapper.auction = Some(auction);
+            self.sale_wrapper(&token_id, &nonce).set(&wrapper);
 
             self.add_transaction(); 
 
@@ -264,11 +277,15 @@ pub trait Isengard {
         nonce: u64
     ) -> SCResult<()> {
         require!(
-            self.is_up_for_auction(&token_id, &nonce),
+            self.is_up_for_sale(&token_id, &nonce),
             "nft is not up for auction!"
         );
 
-        let auction = self.auction(&token_id, &nonce).get();
+
+        let wrapper = self.sale_wrapper(&token_id, &nonce).get();
+
+        //TODO MAKE SURE THIS AUCTION EXISTS SO THIS DOESN'T PANIC
+        let auction = wrapper.auction.unwrap();
 
         require!(
             self.blockchain().get_block_timestamp() > auction.deadline
@@ -280,13 +297,17 @@ pub trait Isengard {
             // send nft to the auction winner
             self.send().direct_egld(&auction.nft_owner, &auction.current_bid, b"EGLD sent successfully");
             self.add_transaction(); 
-            self.nft_states(&token_id, &nonce).clear();
+            //self.nft_states(&token_id, &nonce).clear();
+            self.sale_wrapper(&token_id, &nonce).clear();
+
             Ok(self.transfer_to(auction.current_winner, token_id, nonce))
             
         } else {
             // return nft to its owner
             self.add_transaction(); 
-            self.nft_states(&token_id, &nonce).clear();
+            //self.nft_states(&token_id, &nonce).clear();
+            self.sale_wrapper(&token_id, &nonce).clear();
+
             Ok(self.transfer_to(auction.nft_owner, token_id, nonce))
         }
     }
@@ -345,40 +366,27 @@ pub trait Isengard {
         Ok(())
     }
 
-    #[endpoint]
-    fn add(&self) -> SCResult<()> {
-        let counter = self.get_counter();
-        let new = counter + 1;
-        self.set_counter(&new);
+    // #[endpoint]
+    // fn add(&self){
+    //     let counter = self.get_counter();
+    //     let new = counter + 1;
+    //     self.set_counter(&new);
+    // }
 
-        self.add_transaction(); 
-        Ok(())
-    }
-
-    #[endpoint]
-    fn substract(&self) -> SCResult<()> {
-        let counter = self.get_counter();
-        let new = counter - 1;
-        self.set_counter(&new);
-        
-        self.add_transaction(); 
-        Ok(())
-    }
-
-    #[endpoint]
-    fn test(&self) -> SCResult<()> {
-        Ok(())
-    }
+    // #[endpoint]
+    // fn substract(&self){
+    //     let counter = self.get_counter();
+    //     let new = counter - 1;
+    //     self.set_counter(&new);
+    // }
 
     // private
-
     fn transfer_to(&self, 
         address: ManagedAddress, 
         token_id: TokenIdentifier,
         nonce: u64
     ){
         let amount = BigUint::from(1u64); // Create a BigUint with value of 1.
-
         self.send().direct(&address, &token_id, nonce, &amount , b"retrieve successful");
     }
 
@@ -404,12 +412,14 @@ pub trait Isengard {
     // #[storage_mapper("nftDeposit")]
     // fn nft_deposit(&self, nft_id: u32) -> SingleValueMapper<Self::Storage, Auction<Self::Api>>;
     
-    #[view(getCounter)]
-    #[storage_get("counter")]
-    fn get_counter(&self) -> i64;
 
-    #[storage_set("counter")]
-    fn set_counter(&self, sum: &i64);
+
+    // #[view(getActiveSalesCounter)]
+    // #[storage_get("activeSalesCounter")]
+    // fn get_counter(&self) -> i64;
+
+    // #[storage_set("activeSalesCounter")]
+    // fn set_counter(&self, sum: &i64);
 
     #[view(getTransactionCount)]
     #[storage_get("transactionCount")]
@@ -419,7 +429,6 @@ pub trait Isengard {
     #[storage_set("transactionCount")]
     fn set_transaction_counter(&self, sum: &u64);
 
-    
     #[storage_set("owner")]
     fn set_owner(&self, address: &ManagedAddress);   
 
@@ -427,6 +436,7 @@ pub trait Isengard {
     #[storage_mapper("version")]
     fn version(&self) -> SingleValueMapper<u64>;
 
+    // This might not be needed any more after the new method is implemented.
     #[view(getNftState)]
     #[storage_mapper("nftStates")]
     fn nft_states(&self, nft_id: &TokenIdentifier, nonce:&u64) -> SingleValueMapper<NftStates<Self::Api>>;
@@ -436,6 +446,10 @@ pub trait Isengard {
 
     #[storage_mapper("auction")]
     fn auction(&self, nft_id: &TokenIdentifier,nonce:&u64) -> SingleValueMapper<Auction<Self::Api>>;
+
+    #[view(getWrapper)]
+    #[storage_mapper("saleWrapper")]
+    fn sale_wrapper(&self, nft_id: &TokenIdentifier,nonce:&u64) -> SingleValueMapper<SaleWrapper<Self::Api>>;
 
     #[view(getSale)]
     #[storage_get("sale")]

@@ -13,7 +13,7 @@ pub enum NftState {
 }
 
 #[derive(NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
-pub struct NftStates<M:ManagedTypeApi>{
+pub struct NftStates<M:ManagedTypeApi>{  // Maybe remove this and use this in Wrapper!
     pub nft_owner: ManagedAddress<M>,
     pub state : NftState
 }
@@ -55,6 +55,54 @@ impl<M: ManagedTypeApi> Auction<M> {
             final_price : final_price.clone(),
             current_bid: BigUint::zero(type_manager.clone()),
             current_winner: ManagedAddress::zero_address(type_manager),
+        }
+    }
+}
+
+#[derive(NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
+pub struct Sale<M:ManagedTypeApi> {
+    pub nft_owner: ManagedAddress<M>,
+    pub price: BigUint<M>
+}
+
+impl<M: ManagedTypeApi> Sale<M> {
+    pub fn new(
+        nft_owner: &ManagedAddress<M>,
+        price: &BigUint<M>
+    ) -> Self {
+        Sale {
+            nft_owner : nft_owner.clone(),
+            price : price.clone(),
+        }
+    }
+}
+
+#[derive(NestedEncode, NestedDecode, TopEncode, TopDecode, TypeAbi)]
+pub struct SaleWrapper<M:ManagedTypeApi> {
+    pub sale : Option<Sale<M>>,
+    pub auction : Option<Auction<M>>,
+    pub state : NftState
+}
+
+impl <M:ManagedTypeApi>SaleWrapper<M> {
+    pub fn new_sale(
+        sale: Sale<M>,
+        state : NftState
+    ) -> Self {
+        SaleWrapper  {
+          sale : Some(sale),
+          auction: None,
+          state : state
+        }
+    }
+    pub fn new_auction(
+        auction: Auction<M>,
+        state : NftState
+    ) -> Self {
+        SaleWrapper  {
+          sale: None,
+          auction : Some(auction),
+          state : state
         }
     }
 }
