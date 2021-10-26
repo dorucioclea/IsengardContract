@@ -101,17 +101,18 @@ pub trait Isengard {
     ) -> SCResult<()> {
         let caller = self.blockchain().get_caller(); // get the user that sent this request
         let amount = BigUint::from(1u64); // Create a BigUint with value of 1.
-        let sale = self.sale(&token_id, &nonce).get(); // get the value of the NFT owner.
 
+        
+        let sale_w = self.sale_wrapper(&token_id, &nonce).get();
         // Make sure the one who calls this is the one who added the nft.
         require!(
-           caller == sale.nft_owner,
+           caller == sale_w.sale.unwrap().nft_owner,
            "You can't cancel a sale of an NFT you don't own."
         );
 
         self.send().direct(&caller, &token_id, nonce, &amount , b"retrieve successful");
         
-        self.nft_states(&token_id, &nonce).clear();
+        self.sale_wrapper(&token_id, &nonce).clear();
         self.add_transaction(); 
         Ok(())
     }
@@ -210,10 +211,10 @@ pub trait Isengard {
             "nft is not up for a type of sale!"
         );
 
-        let mut wrapper = self.sale_wrapper(&token_id, &nonce).get();
+        let  mut wrapper = self.sale_wrapper(&token_id, &nonce).get();
 
         //TODO MAKE SURE THIS AUCTION EXISTS SO THIS DOESN'T PANIC
-        let mut auction = wrapper.auction.unwrap();
+        let  mut auction = wrapper.auction.unwrap();
 
         require!(
             self.blockchain().get_block_timestamp() < auction.deadline,
@@ -251,13 +252,17 @@ pub trait Isengard {
         }
 
         if auction.final_price <= bid_amount {
-            self.send().direct_egld(&auction.nft_owner, &auction.current_bid, b"EGLD sent successfully");
+
+            self.send().direct_egld(&auction.nft_owner, &bid_amount, b"EGLD sent successfully");
             self.sale_wrapper(&token_id, &nonce).clear();
 
             self.add_transaction(); 
-            // self.nft_states(&token_id, &nonce).clear();
 
-            Ok(self.transfer_to(auction.current_winner, token_id, nonce))
+            //let amount = BigUint::from(1u64); // Create a BigUint with value of 1.
+            //self.send().direct(&caller, &token_id, nonce, &amount , b"retrieve successful");
+
+            //Ok(())
+            Ok(self.transfer_to(caller, token_id, nonce))
         }else{
             auction.current_bid = bid_amount;
             auction.current_winner = caller;
@@ -271,7 +276,7 @@ pub trait Isengard {
         }
     }
 
-    #[endpoint(endAuction)]
+    #[endpoint]
     fn end_auction(&self, 
         token_id: TokenIdentifier,
         nonce: u64
@@ -300,6 +305,9 @@ pub trait Isengard {
             //self.nft_states(&token_id, &nonce).clear();
             self.sale_wrapper(&token_id, &nonce).clear();
 
+            let amount = BigUint::from(1u64); // Create a BigUint with value of 1.
+            self.send().direct(&auction.current_winner, &token_id, nonce, &amount , b"retrieve successful");
+
             Ok(self.transfer_to(auction.current_winner, token_id, nonce))
             
         } else {
@@ -321,7 +329,15 @@ pub trait Isengard {
     ) -> SCResult<()> {
         let caller = self.blockchain().get_caller(); // get the user that sent this request
         let nft_count = BigUint::from(1u64);
-        let sale = self.sale(&token_id, &nonce).get();
+        // let sale = self.sale(&token_id, &nonce).get();
+        
+        let sale_w = self.sale_wrapper(&token_id, &nonce).get();
+        let sale = sale_w.sale.unwrap();
+        // Make sure the one who calls this is the one who added the nft.
+        require!(
+           caller != sale.nft_owner,
+           "You can't buy an nft that you put up for sale"
+        );
 
         require!(
             caller != self.types().address_zero(),
@@ -344,10 +360,11 @@ pub trait Isengard {
         self.send()
             .direct_egld(&sale.nft_owner, &payment, b"EGLD sent successfully");
 
-         self.sale(&token_id,&nonce).clear();
+        self.sale_wrapper(&token_id, &nonce).clear();
 
-         self.add_transaction(); 
-         self.nft_states(&token_id, &nonce).clear();
+        self.add_transaction(); 
+        // self.nft_states(&token_id, &nonce).clear();
+
         Ok(())
     }
 
