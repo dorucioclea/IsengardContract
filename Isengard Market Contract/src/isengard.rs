@@ -166,6 +166,7 @@ pub trait Isengard {
         #[payment_nonce] nonce: u64,
             starting_price: BigUint,
             final_price: BigUint,
+            start_time : u64,
             deadline : u64
     ) -> SCResult<()> {
         let token_type = self.call_value().esdt_token_type();
@@ -182,6 +183,7 @@ pub trait Isengard {
             &starting_price,
             &final_price,
             deadline,
+            start_time,
         );
 
         // let state = NftStates::new(
@@ -246,7 +248,7 @@ pub trait Isengard {
         );  
  
         // Refund losing bid
-        if auction.current_winner != self.types().address_zero() {
+        if !auction.current_winner.is_zero() {
             self.send()
                 .direct_egld(&auction.current_winner, &auction.current_bid, b"bid refund");
         }
@@ -298,7 +300,7 @@ pub trait Isengard {
             "auction has not ended yet!"
         );
 
-        if auction.current_winner != self.types().address_zero() {
+        if !auction.current_winner.is_zero() {
             // send nft to the auction winner
             self.send().direct_egld(&auction.nft_owner, &auction.current_bid, b"EGLD sent successfully");
             self.add_transaction(); 
@@ -340,7 +342,7 @@ pub trait Isengard {
         );
 
         require!(
-            caller != self.types().address_zero(),
+            !caller.is_zero(),
             "Can't transfer to default address 0x0!"
         );
         require!(

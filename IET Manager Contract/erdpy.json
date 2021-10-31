@@ -1,0 +1,20 @@
+{
+    "configurations": {
+        "default": {
+            "proxy": "https://devnet-gateway.elrond.com",
+            "chainID": "D"
+        }
+    },
+    "contract":{
+        "deploy":{
+            "verbose": true,
+            "bytecode": "output/isengard-token-sale.wasm",
+            "recall-nonce": true,
+            "pem": "../wallet/wallet.pem",
+            "gas-limit": 60000000,
+            "send": true,
+            "outfile": "devnet-testnet.interaction.json",
+            "arguments":[1635626400,1635712799,1635712800,1635799199,1635799200,1635885600,100000000,200000000,400000000,2500000000000,10000000000000,20000000000000,"0x495345542d636161313064"]
+        }
+    }
+}

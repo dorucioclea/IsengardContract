@@ -6,10 +6,20 @@
 # The erdpy output
 output
 wallet
-/contract/abi
-/contract/wasm
-/contract/deploy-devnet.interaction.json
-/contract/deploy-testnet.interaction.json
+/Isengard Market Contract/abi
+/Isengard Market Contract/wasm
+/Isengard Market Contract/deploy-devnet.interaction.json
+/Isengard Market Contract/deploy-testnet.interaction.json
+
+/IET Manager Contract/abi
+/IET Manager Contract/wasm
+/IET Manager Contract/deploy-devnet.interaction.json
+/IET Manager Contract/deploy-testnet.interaction.json
+
+/**/abi
+/**/wasm
+/**/deploy-devnet.interaction.json
+/**/deploy-testnet.interaction.json
 
 *.rmeta
 *.rlib
